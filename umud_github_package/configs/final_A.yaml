@@ -1,0 +1,119 @@
+# =====================================================================================================
+# Final A -- the best public file (KG0, public LB 0.23041, 2026-10-24).
+#   = K25b (C18 + Lumify / Siemens native geometry + Telemed MT -0.5 mm (J4) + Telemed PA coupling pull 0.25)
+#   with the Telemed PA head fusF -> G0: the learned-field angle in the deep strip (4-30 % MT) against the LOCAL deep
+#   tangent wherever the insertion strip is steeper than fusF (s = pa_fd_ins - fusF > 0, a sign test), then the
+#   unchanged PA recipe (confidence rule, clip median, + 0.3286 rater offset) and the unchanged K25 coupling term
+#   (lambda 0.25, on K25b's MT / FL). Only the Telemed PA cells change (FL stays at K25b's).
+#   umud-run --config configs/final_A.yaml --stage build   -> artifacts/final/final_A/final_A.csv
+#   must be byte-identical to artifacts/candidates_v10/KG0_K25b.csv (sha256 5d216fda...)
+# GPL-3.0-only.
+# =====================================================================================================
+schema: umud-config/2
+extends: K25b.yaml
+name: final_A
+description: "K25b with the Telemed PA head G0 (KG0) = the best public file"
+
+reference:
+  file: ${repo}/artifacts/candidates_v10/KG0_K25b.csv
+  public_lb: 0.23041
+  sha256: 5d216fdaf1ed6b6e9da95c671e943a75465d4bb8c44f6d4f7ec6ba754ec332bf
+  expect: bytes
+
+prediction: null
+
+pa_head:
+  telemed_head:
+    enabled: true
+    evidence: "artifacts/candidates_v10/manifest.md. Test Telemed clips sit in a regime the benchmarks rarely contain:
+      median s = pa_fd_ins - fusF +1.4 / +2.0 deg (T12 / T10) vs -0.6 .. +0.3 on the benchmarks. On the 78
+      expert-labelled benchmark images in that regime (s > 0.75) fusF + offset reads 0.83 deg low and the K25 rule
+      0.74 deg low; pa_fd_strip (deep strip vs the local tangent) is unbiased (-0.08 deg). KG0 vs the K25 rule:
+      MAE -0.277 deg [-0.456, -0.107] in the regime, -0.050 [-0.090, -0.014] over all 445 benchmark images, no worse
+      on any benchmark. Matches the protocol (insertion angle vs the deep aponeurosis at the insertion). Gate on
+      112 / 140 Telemed images."
+
+lb_constants:
+  - name: telemed_fl_shrink
+    target: [fl_rules.shrink_lambda.telemed_artus_1200x800, fl_rules.shrink_lambda.telemed_artus_1088x644]
+    grid: [0.0, 1.0]
+    value: 0.0
+    status: adopted
+    kind: method_choice
+    ledger: "C12 0.37670 -> C18 0.33526 (-0.0414)"
+    rationale: "EB FL shrinkage toward the group median hurts on Telemed; predicted by the dynamic (Telemed) benchmark"
+  - name: rater_offset_pa
+    target: rater_style.pa_add
+    grid: [0.0, 0.3285798847465733, 0.6571597694931466]
+    value: 0.3285798847465733
+    status: adopted
+    kind: benchmark_constant_LB_confirmed
+    ledger: "C17 (no offset) 0.38091 vs C12 0.37670"
+    rationale: "pre-registered benchmark rule on the OSF xlsx, re-estimated at every build"
+  - name: rater_offset_mt
+    target: rater_style.mt_add
+    grid: [0.0, 0.03876938123115803, 0.07753876246231606]
+    value: 0.03876938123115803
+    status: adopted
+    kind: benchmark_constant_LB_confirmed
+    ledger: "moved with rater_offset_pa"
+    rationale: "benchmark rule value"
+  - name: lumify_geometry
+    target: geometry_space.scanners.philips_lumify.space
+    grid: [image, physical]
+    value: physical
+    status: adopted
+    kind: label_space_choice
+    ledger: "J1 0.29452 vs C18 0.33526 (-0.04074)"
+    rationale: "binary label-space choice; factor from the native screen geometry, confirmed by the 'P' marker detector"
+  - name: siemens_geometry
+    target: geometry_space.scanners.siemens_juniper.space
+    grid: [image, physical]
+    value: physical
+    status: adopted
+    kind: label_space_choice
+    ledger: "J2 0.28005 vs C18 (-0.05521); B1 = C18 + J1 + J2 = 0.23931"
+    rationale: "binary label-space choice; factor = native 1152x864 resolution, confirmed by the UI-triangle detector"
+  - name: telemed1200_geometry
+    target: geometry_space.scanners.telemed_artus_1200x800.space
+    grid: [image, physical]
+    value: image
+    status: adopted
+    kind: label_space_choice
+    ledger: "J3 lost (+0.05413)"
+    rationale: "Telemed labels are in the provided image space"
+  - name: telemed_pa_coupling_weight
+    target: pa_head.coupling_pull.weight
+    grid: [0.0, 0.25, 0.5]
+    value: 0.25
+    status: adopted
+    kind: method_choice
+    ledger: "K25b 0.23297 vs B1_J4 0.23693 (-0.00396)"
+    rationale: "physics coupling FL sin(PA) = 1.067 MT (expert k measured on the OSF benchmarks); pre-declared grid"
+  - name: telemed_pa_head
+    target: pa_head.telemed_head.enabled
+    grid: [false, true]
+    value: true
+    status: adopted
+    kind: method_choice
+    ledger: "KG0 (K25b with the Telemed PA head fusF -> G0) 0.23041 vs K25b 0.23297 (-0.00256); adopt rule
+      pre-registered (d < 0 adopt in both finals; d >= 0 reject and close the head search); one point scored"
+    rationale: "offline-justified per-image head (benchmark regime evidence, see pa_head.telemed_head.evidence); the
+      gate is a sign test (s > 0), the 4-30 % strip is the v3 FieldConfig default set before any Telemed-PA probe,
+      lambda is K25b's 0.25: no LB-tuned constant. G0n (lambda 0) was never scored."
+  - name: telemed_mt_offset
+    target: [mt_edge.constant_mm.telemed_artus_1200x800, mt_edge.constant_mm.telemed_artus_1088x644]
+    grid: [0.0, -0.25, -0.5, -0.8]
+    value: -0.5
+    status: adopted_final_A_only
+    kind: scanner_constant
+    ledger: "B1 0.23931 -> B1_J4 0.23693 (-0.00238); grid pre-declared {0, -0.25, -0.5, -0.8}, one point scored"
+    rationale: "LB-chosen continuous constant without an offline justification (declared as such). Final B omits it."
+
+declarations:
+  - "LB-guided method choices (declared): Telemed FL unshrunk (C18); Lumify and Siemens PA / FL in their native
+     square-pixel geometry with fixed per-scanner factors measured from image content (J1, J2); Telemed in image space
+     (J3 rejected); Telemed PA coupling pull lambda = 0.25 on a pre-declared grid (K25b); Telemed PA head G0 (KG0,
+     offline-justified, sign-test gate, no new constant)."
+  - "LB-chosen constant (declared, Final A only): Telemed MT -0.5 mm (J4), a hand-picked point of a pre-declared grid
+     with no offline justification; Final B is this file without it."

@@ -1,0 +1,18 @@
+{
+  "id": "shivateja005/umud-u-net-fascicle-384-cli",
+  "title": "UMUD U-Net++ Fascicle 384 CLI",
+  "code_file": "train.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "machine_shape": "NvidiaTeslaT4",
+  "competition_sources": [
+    "umud-challenge-muscle-architecture-in-ultrasound-data"
+  ],
+  "dataset_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

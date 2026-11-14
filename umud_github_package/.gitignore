@@ -1,0 +1,12 @@
+data/
+artifacts/**
+!artifacts/.gitkeep
+*.ckpt
+*.pth
+*.pt
+*.onnx
+.ipynb_checkpoints/
+__pycache__/
+.pytest_cache/
+.venv/
+.DS_Store

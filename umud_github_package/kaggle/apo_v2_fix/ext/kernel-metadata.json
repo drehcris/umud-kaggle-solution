@@ -1,0 +1,19 @@
+{
+  "id": "shivateja005/umud-apo-v2-fix-ext",
+  "title": "UMUD Apo v2 Fix ext",
+  "code_file": "infer_fix_ext.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": "true",
+  "enable_gpu": "false",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "competition_sources": [
+    "umud-challenge-muscle-architecture-in-ultrasound-data"
+  ],
+  "dataset_sources": [],
+  "kernel_sources": [
+    "shivateja005/umud-apo-v2"
+  ],
+  "model_sources": []
+}

@@ -1,0 +1,48 @@
+[project]
+name = "umud-challenge"
+version = "1.0.0"
+description = "UMUD Kaggle challenge solution: muscle architecture (PA, FL, MT) from ultrasound images."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-only"
+dependencies = [
+  "kaggle>=1.6.17",
+  "numpy>=1.26",
+  "pandas>=2.2",
+  "pillow>=10.4",
+  "pyyaml>=6.0",
+  "opencv-python-headless>=4.10",
+  "openpyxl>=3.1",
+  "scikit-image>=0.24",
+  "scipy>=1.14",
+  "tqdm>=4.66",
+]
+
+[project.scripts]
+umud-run = "umud.run:main"
+
+[project.optional-dependencies]
+train = [
+  "segmentation-models-pytorch>=0.3.4,<0.6",
+  "torch>=2.4",
+  "torchvision>=0.19",
+]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests", "tools/annotator"]
+addopts = "-p no:cacheprovider"
+filterwarnings = [
+  "ignore::RuntimeWarning",
+  "ignore:Starting with pandas version 4.0",
+]

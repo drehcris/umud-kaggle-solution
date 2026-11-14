@@ -1,0 +1,115 @@
+# =====================================================================================================
+# K25b -- the previous best public file (public LB 0.23297, 2026-10-24) and the base of Final A.
+#   = C18 (image-space base)
+#   + native geometry for Philips Lumify (c = 0.844) and Siemens Juniper (c = 1.125) PA / FL   [J1, J2]
+#   + Telemed MT -0.5 mm (J4: an LB-chosen scanner constant, declared)
+#   + Telemed PA pulled 25 % toward the coupling-implied PA asin(1.067 MT / FL)                  [K25b rule]
+# The coupling pull sees the shifted MT, exactly as the scored file was built.
+#   umud-run --config configs/K25b.yaml --stage build   -> artifacts/final/K25b/K25b.csv
+#   must be byte-identical to artifacts/candidates_v9/submit_2026-10-24/02_K25b_B1J4.csv (sha256 364e9cc3...)
+# Without J4 (telemed_mt_offset 0.0, built by tests/test_final_package.py) it is the previous Final B
+# (sha256 30512ad2...); without the coupling pull it is B1_J4, without both B1 (both scored, byte-identical).
+# GPL-3.0-only.
+# =====================================================================================================
+schema: umud-config/2
+extends: C18.yaml
+name: K25b
+description: "C18 + Lumify / Siemens native geometry + Telemed MT -0.5 mm (J4) + Telemed PA coupling pull 0.25"
+
+reference:
+  file: ${repo}/artifacts/candidates_v9/submit_2026-10-24/02_K25b_B1J4.csv
+  public_lb: 0.23297
+  sha256: 364e9cc33823fec031a58854a20ff54ba6e71c72921657664926095583c3afaa
+  expect: bytes
+
+prediction: null
+
+geometry_space:
+  scanners:
+    siemens_juniper:        {space: physical}
+    philips_lumify:         {space: physical}
+
+pa_head:
+  coupling_pull: {weight: 0.25, groups: [telemed], k: 1.067}
+
+mt_edge:
+  constant_mm:
+    default: 0.0
+    telemed_artus_1200x800: -0.5
+    telemed_artus_1088x644: -0.5
+
+lb_constants:
+  - name: telemed_fl_shrink
+    target: [fl_rules.shrink_lambda.telemed_artus_1200x800, fl_rules.shrink_lambda.telemed_artus_1088x644]
+    grid: [0.0, 1.0]
+    value: 0.0
+    status: adopted
+    kind: method_choice
+    ledger: "C12 0.37670 -> C18 0.33526 (-0.0414)"
+    rationale: "EB FL shrinkage toward the group median hurts on Telemed; predicted by the dynamic (Telemed) benchmark"
+  - name: rater_offset_pa
+    target: rater_style.pa_add
+    grid: [0.0, 0.3285798847465733, 0.6571597694931466]
+    value: 0.3285798847465733
+    status: adopted
+    kind: benchmark_constant_LB_confirmed
+    ledger: "C17 (no offset) 0.38091 vs C12 0.37670"
+    rationale: "pre-registered benchmark rule on the OSF xlsx, re-estimated at every build"
+  - name: rater_offset_mt
+    target: rater_style.mt_add
+    grid: [0.0, 0.03876938123115803, 0.07753876246231606]
+    value: 0.03876938123115803
+    status: adopted
+    kind: benchmark_constant_LB_confirmed
+    ledger: "moved with rater_offset_pa"
+    rationale: "benchmark rule value"
+  - name: lumify_geometry
+    target: geometry_space.scanners.philips_lumify.space
+    grid: [image, physical]
+    value: physical
+    status: adopted
+    kind: label_space_choice
+    ledger: "J1 (C18 + Lumify native, c = 0.844) 0.29452 vs C18 0.33526 (-0.04074)"
+    rationale: "binary choice of the label space; the factor is not fitted: 16:9 screen -> 3:2 frame (0.84375) and
+      the 'P' marker detector (median 0.840) confirm it on every build"
+  - name: siemens_geometry
+    target: geometry_space.scanners.siemens_juniper.space
+    grid: [image, physical]
+    value: physical
+    status: adopted
+    kind: label_space_choice
+    ledger: "J2 (C18 + Siemens native, c = 1.125) 0.28005 vs C18 (-0.05521); B1 = C18 + J1 + J2 = 0.23931 (additive)"
+    rationale: "binary choice; factor = native 1152x864 -> 1200x800 (1.125), confirmed by the 45-degree UI triangles"
+  - name: telemed1200_geometry
+    target: geometry_space.scanners.telemed_artus_1200x800.space
+    grid: [image, physical]
+    value: image
+    status: adopted
+    kind: label_space_choice
+    ledger: "J3 (Telemed-1200 native, c = 0.9067) lost: +0.05413"
+    rationale: "Telemed labels are in the provided image space (no transform)"
+  - name: telemed_pa_coupling_weight
+    target: pa_head.coupling_pull.weight
+    grid: [0.0, 0.25, 0.5]
+    value: 0.25
+    status: adopted
+    kind: method_choice
+    ledger: "K25b (B1_J4 + Telemed PA 25 % toward asin(1.067 MT / FL)) 0.23297 vs B1_J4 0.23693 (-0.00396)"
+    rationale: "physics coupling FL sin(PA) = k MT with the expert k = 1.067 measured offline (static benchmark 1.07,
+      VL 1.067); Telemed predictions had k 0.95-1.02. The pull weight was fixed on a pre-declared grid {0, 0.25,
+      0.5} before scoring and only its first point was scored."
+  - name: telemed_mt_offset
+    target: [mt_edge.constant_mm.telemed_artus_1200x800, mt_edge.constant_mm.telemed_artus_1088x644]
+    grid: [0.0, -0.25, -0.5, -0.8]
+    value: -0.5
+    status: adopted_final_A_only
+    kind: scanner_constant
+    ledger: "B1 0.23931 -> B1_J4 0.23693 (-0.00238); grid pre-declared {0, -0.25, -0.5, -0.8}, one point scored"
+    rationale: "LB-chosen continuous constant without an offline justification (declared as such). Final B omits it."
+
+declarations:
+  - "LB-guided method choices (declared): Telemed FL unshrunk (C18); Lumify and Siemens PA / FL in their native
+     square-pixel geometry with fixed per-scanner factors measured from image content (J1, J2); Telemed in image space
+     (J3 rejected); Telemed PA coupling pull lambda = 0.25 on a pre-declared grid (K25b)."
+  - "LB-chosen constant (declared, Final A only): Telemed MT -0.5 mm (J4), a hand-picked point of a pre-declared grid
+     with no offline justification."

@@ -1,0 +1,354 @@
+# =====================================================================================================
+# C18 -- the image-space base of both finals (public LB 0.33526, 2026-10-22).
+#   apo_v2fix inner-edge MT, fusF PA with the confidence rule, ens_pp FL with empirical-Bayes shrinkage toward
+#   scanner x muscle centres, half-strength rater-style offset; Telemed FL = UNSHRUNK per-clip median raw FL.
+#   No post rules (every scanner in image space, no MT constant, no coupling pull).
+# Every number follows from this file + the pinned inputs (sha256) + the pinned code (sha256):
+#   umud-run --config configs/C18.yaml --stage build      -> artifacts/final/C18/C18.csv (byte-identical to the
+#                                                            scored file, tests/test_final_package.py)
+# Documentation-only keys (rationale, evidence, note, declaration, ...) are ignored by the runner.
+# Re-pin after an intended change of an input or a pinned code file: python tools/pin_config.py configs/C18.yaml
+# GPL-3.0-only.
+# =====================================================================================================
+schema: umud-config/2
+name: C18
+description: "C12 recipe + Telemed FL = unshrunk raw per-clip median FL"
+
+reference:                        # the scored file this config must rebuild
+  file: ${repo}/artifacts/candidates_v6/C18_C12_telemedFLraw.csv
+  public_lb: 0.33526
+  sha256: 3f9379f7e0c14b9c387ac0f29c81615115ec927b6f7d75c72b3a05504c8b633d
+  expect: bytes
+
+paths:
+  out_dir: ${repo}/artifacts/final/${name}
+  test_images: ${repo}/data/umud-challenge-muscle-architecture-in-ultrasound-data/test_images_v2/test_set_v2
+  static_dir: ${repo}/data/external_umud_benchmark/static/benchmark_dataset_architecture_v0.1.0
+  dynamic_dir: ${repo}/data/external_umud_benchmark/dynamic/benchmark_dataset_architecture_GM_dynamic_v0.1.0
+  test_layout: ${repo}/artifacts/final/test_layout.csv            # umud-run --stage layout (from the images)
+  v3_cache: ${repo}/artifacts/candidates_v3/cache                  # per-image measurements (measure stage)
+  v4_cache: ${repo}/artifacts/eval_v4/flfix/cache                  # extra deep-strip PA columns (measure stage)
+  muscle_table: ${repo}/artifacts/candidates_v5/muscle/test_muscle.csv   # burned-in muscle label OCR
+  vl_labels: ${repo}/artifacts/candidates/bench/vl_labels.csv            # scripts/vl_labels.py
+  note: "data/ (competition data, OSF benchmarks) and artifacts/ (maps, caches, outputs) are not in git. How each
+    input is made: README.md 'Reproduce'. The per-image caches are the measure-stage output of the maps."
+
+# ------------------------------------------------------------------------------- pinned inputs and code
+inputs:                           # every file the build stage reads (kind: cache = measure-stage output)
+  - {path: "${repo}/artifacts/candidates_v3/cache/test__v2.csv", kind: cache, sha256: "4124b41710566a281d317019724293d6aadcf7541f3ed566c6702d0adbdce2e1"}
+  - {path: "${repo}/artifacts/candidates_v3/cache/static__v2.csv", kind: cache, sha256: "77a0fd8160e8bd2664f9ace8704681aa3b69ceba55a2b69994499daa995d433e"}
+  - {path: "${repo}/artifacts/candidates_v3/cache/vl__v2.csv", kind: cache, sha256: "0ed3e33296c503d5c14e8e70c5771bb19eeb926234f833f30b7bd4d3e4b0623b"}
+  - {path: "${repo}/artifacts/candidates_v3/cache/dynamic__v2.csv", kind: cache, sha256: "8a62529ca0e74c6bfe60caa9f85ee8559628a4084680a45af2501457da01b4cf"}
+  - {path: "${repo}/artifacts/eval_v4/flfix/cache/test__v2.csv", kind: cache, sha256: "7a6763827e071abeb74586ec25e0cc59ad9719275c9433154fea664ad584bb9f"}
+  - {path: "${repo}/artifacts/eval_v4/flfix/cache/static__v2.csv", kind: cache, sha256: "fa1e106d09c3ed6303e94136d265e677cd9ad87112ae1faeeb50d2f478c8b231"}
+  - {path: "${repo}/artifacts/eval_v4/flfix/cache/vl__v2.csv", kind: cache, sha256: "2b77a5258d675f3fcfd572bdf7b4a29324048665e0cea3ff3e52776206b54a86"}
+  - {path: "${repo}/artifacts/eval_v4/flfix/cache/dynamic__v2.csv", kind: cache, sha256: "c1a5d7a84da0b9287b966896f8be0d591790d248ffad4271a377e43fdf5b913f"}
+  - {path: "${repo}/artifacts/candidates_v5/muscle/test_muscle.csv", kind: labels, sha256: "d4c982ffc3c87159cdffadf56466d02f4c69a9f1e453d0cce15bd5de159f4bc4"}
+  - {path: "${repo}/artifacts/candidates/bench/vl_labels.csv", kind: labels, sha256: "3f919b5a0521333666100e98d87c08ae98044afde5fe0bd2fddd1e4ea66951de"}
+  - {path: "${repo}/data/external_umud_benchmark/static/benchmark_dataset_architecture_v0.1.0/Results_benchmark_architecture_v0.1.0.xlsx", kind: labels, sha256: "19839ef9a5dc34dd2e1c3fdc167a5904946d4641942aca7ae1cbfb7bd747c804"}
+  - {path: "${repo}/data/external_umud_benchmark/dynamic/benchmark_dataset_architecture_GM_dynamic_v0.1.0/benchmark_architecture_GM_calf_raise_v0.1.0.xlsx", kind: labels, sha256: "d01370d83d3cfbe9ba17ac179f1f0d90cbae055d26b7cf4f48cf646e703334ae"}
+
+code:                             # repository sources whose functions the runner calls
+  - {path: "${repo}/src/umud/shrinkage.py", sha256: "f6e6da53efbf6bf1b80051f2f37e1c84bf6bd4c011b7c53f8e1f3c641d496eb8"}
+  - {path: "${repo}/src/umud/muscle_label.py", sha256: "7faa7c655cd42317ce7c3da8d3c8f3788e7f0f3af0c08941ac6cd19c5714a913"}
+  - {path: "${repo}/src/umud/geometry.py", sha256: "4f5baa77e1c95ce02a26a03c1ce19bbf28b91764b482c74e2167c5678bebe6ad"}
+  - {path: "${repo}/src/umud/geometry_v2.py", sha256: "8dabe19fe0f99ce3cb37457f176ed7e90d584f8da17c2a8a33ebbd40901416f0"}
+  - {path: "${repo}/src/umud/layout.py", sha256: "086805891f1837a247c64deaa323ab27dcf258e6b3960b9fbf76bacf93b06caa"}
+  - {path: "${repo}/src/umud/clips.py", sha256: "4e643aba513a01e569fd447b463e15dde204224ce180f1997a16410a9d81df0e"}
+  - {path: "${repo}/src/umud/native_geometry.py", sha256: "e5a39f22e533cba99d4feac0c5613fa7f7ed2dd39f306d663dcbe339dc335971"}
+  - {path: "${repo}/scripts/build_candidates.py", sha256: "563ba73e2bd84a42348b979828794e359043ad2a4eed62533b1f9f0776a57794"}
+  - {path: "${repo}/scripts/build_candidates_v3.py", sha256: "cf0a67341900f373330b091ace0b8671348f7b49ca57c9759f6c77860e9fa178"}
+  - {path: "${repo}/scripts/build_candidates_v4.py", sha256: "a98b1278028752635ecd29f9b82e4916bb9442b5e9b266d0bc18029de7ba77ea"}
+  - {path: "${repo}/scripts/eval_shrinkage.py", sha256: "d2dca7edb6c0f517ae987a2c498dd22730d2e43280640c2bf9e16b7020d3ca06"}
+  - {path: "${repo}/scripts/rater_calibration.py", sha256: "376e8ab3c6d92cd21da70742633c2b33c1bb6acacb0cdfbaa86c22b5b5eeaad7"}
+  - {path: "${repo}/scripts/eval_apo_v2.py", sha256: "1cd674bf6c30a00447a20a05212b6253c17bdef1abf689daeb60c8c6a3530dcf"}
+  - {path: "${repo}/scripts/eval_orient.py", sha256: "d95583f3cc20a8ccf66de99ccdf765ace0ecc15c7577363003e446995869fca1"}
+
+environment:                      # where the caches and this reproduction were computed (informative)
+  python: "3.12.11"
+  numpy: "2.5.3"
+  pandas: "3.0.5"
+  scipy: "1.18.1"
+  note: "uv.lock / requirements-lock.txt pin every package. x86 (pod) vs arm (laptop) per-image caches differ by
+    <= 1.4e-5 mm; the build stage itself is deterministic on one platform."
+
+groups:
+  all: [siemens_juniper, telemed_artus_1200x800, telemed_artus_1088x644, philips_lumify, legacy_853, legacy_512]
+  telemed: [telemed_artus_1200x800, telemed_artus_1088x644]
+
+layout:                           # umud.layout: everything from the image content
+  family: "umud.geometry.ultrasound_metadata (scale bar + viewport decoder adapted from AmbrosM, Apache-2.0)"
+  group: "family, plus _<W>x<H> for the Telemed ArtUS layouts"
+  clips:
+    method: consecutive_ncc       # NCC of z-normalised 160x120 viewport thumbnails of neighbours in file-name order
+    threshold: 0.8                # test set: within-clip NCC >= 0.946, between non-clip neighbours <= 0.561
+    min_frames: 2
+    evidence: "reproduces the 28 Telemed clips of 5 frames exactly (tests/test_final_package.py)"
+
+benchmarks:
+  static_clean10: [im_02_arch, im_03_arch, im_14_arch, im_17_arch, im_20_arch, im_23_arch, im_24_arch,
+                   im_31_arch, im_33_arch, im_34_arch]
+
+# ------------------------------------------------------------------------------- 1. maps (Kaggle)
+maps:
+  sources:
+    apo_primary: {bank: "${repo}/artifacts/eval_v3/apo2/maskbank_fix", model: apo_v2fix, channels: [band, upper, lower],
+                  thr: 0.5, edges: centroid,
+                  how: "apo_v2 (3-channel band / upper-edge / lower-edge ConvNeXt-S U-Net, 5 folds, letterbox 512) with
+                        BatchNorm running_var re-estimated on each fold's training split, CPU re-inference, no TTA"}
+    apo_fallbacks:
+      - {bank: "${repo}/artifacts/maskbank", model: ours_apo384_noflip, thr: 0.8}
+      - {bank: "${repo}/artifacts/maskbank", model: dlt_apo_noflip, thr: 0.5,
+         how: "DL_Track_US v0.3 VGG16 apo weights (Apache-2.0); never reached on the test set (apo_v2fix finds a pair on
+               309 / 309 images: d_apo_source = primary everywhere)"}
+    fasc_fragments: {bank: "${repo}/artifacts/maskbank", model: ours_fasc384_noflip, thr: 0.95}
+    fasc_field: {bank: "${repo}/artifacts/kaggle/fasc_orient_v1/maskbank", model: fasc_orient_v1, channels: [seg, cos2, sin2],
+                 how: "theta = 0.5 atan2(2 sin2/255 - 1, 2 cos2/255 - 1); length = agreement"}
+  checkpoints:                    # trained on the competition training data only, in private Kaggle T4 kernels
+    - {name: apo_unetpp_r34_384.pt, kernel: shivateja005/umud-u-net-aponeurosis-384-cli, code: kaggle/aponeurosis_unetpp_384/train.py,
+       pretrained: "ResNet-34 ImageNet (segmentation-models-pytorch 0.5.0 / torchvision)"}
+    - {name: fasc_unetpp_r34_384.pt, kernel: shivateja005/umud-u-net-fascicle-384-cli, code: kaggle/fascicle_unetpp_384/train.py,
+       pretrained: "ResNet-34 ImageNet (segmentation-models-pytorch 0.5.0 / torchvision)"}
+    - {name: "apo_v2 fold 0-4", kernel: shivateja005/umud-apo-v2, code: kaggle/apo_v2/train.py,
+       pretrained: "timm convnext_small.fb_in22k_ft_in1k (Apache-2.0)"}
+    - {name: "fasc_orient_v1 fold 0-4", kernel: shivateja005/umud-fasc-orient-v1, code: kaggle/fasc_orient_v1/train.py,
+       pretrained: "timm convnext_small.fb_in22k_ft_in1k (Apache-2.0)"}
+    - {name: model-apo-VGG16_DiceBCE_512_300.h5, url: "https://osf.io/download/6jzuy/", license: Apache-2.0,
+       use: "DL_Track_US fallback apo map only (not reached on the test set)"}
+  kaggle:
+    cli: "${repo}/.venv/bin/kaggle"
+    accelerator: NvidiaTeslaT4
+    competition_data: /kaggle/input/competitions/umud-challenge-muscle-architecture-in-ultrasound-data
+  kernels:                        # stage maps writes one ready-to-push folder per entry (never pushes)
+    - slug: aponeurosis-unetpp-384
+      code_dir: "${repo}/kaggle/aponeurosis_unetpp_384"
+      produces: ["apo_unetpp_r34_384.pt"]
+      download_to: "${repo}/artifacts/final/maps/aponeurosis-unetpp-384"
+      frozen_at: "${repo}/artifacts/kaggle/aponeurosis_unetpp_384"
+    - slug: fascicle-unetpp-384
+      code_dir: "${repo}/kaggle/fascicle_unetpp_384"
+      produces: ["fasc_unetpp_r34_384.pt"]
+      download_to: "${repo}/artifacts/final/maps/fascicle-unetpp-384"
+      frozen_at: "${repo}/artifacts/kaggle/fascicle_unetpp_384"
+    - slug: infer-maskbank
+      code_dir: "${repo}/kaggle/infer_maskbank"
+      produces: ["{test,static,dynamic,vl}__{ours_apo384,ours_fasc384,dlt_apo,dlt_fasc}[_noflip].npz"]
+      download_to: "${repo}/artifacts/final/maps/infer-maskbank"   # fresh dir: never over the frozen maps
+      frozen_at: "${repo}/artifacts/maskbank"
+      note: "U-Net++ r34 384 apo / fascicle maps (kernel_sources: the two *-384-cli training kernels) + DL_Track_US
+        maps (weights downloaded inside the kernel from OSF 7mjsc)."
+    - slug: fasc-orient-v1
+      code_dir: "${repo}/kaggle/fasc_orient_v1"
+      produces: ["{test,static,dynamic,vl,train_oof}__fasc_orient_v1_{seg,cos2,sin2}.npz"]
+      download_to: "${repo}/artifacts/final/maps/fasc-orient-v1"
+      frozen_at: "${repo}/artifacts/kaggle/fasc_orient_v1"
+      file_pattern: "maskbank/.*"
+      note: "trains 5 folds (convnext_small U-Net, fascicle seg + doubled-angle orientation) and writes the maps"
+    - slug: apo-v2
+      code_dir: "${repo}/kaggle/apo_v2"
+      produces: ["apo_v2 fold checkpoints 0-4 (its own maps are broken by an fp16 BatchNorm overflow: use apo-v2-fix)"]
+      download_to: "${repo}/artifacts/final/maps/apo-v2"
+      frozen_at: "${repo}/artifacts/kaggle/apo_v2"
+      file_pattern: "apo_v2/(folds.csv|.*json)"
+    - slug: apo-v2-fix-test
+      code_dir: "${repo}/kaggle/apo_v2_fix/test"
+      produces: ["test__apo_v2fix_{band,upper,lower}.npz"]
+      download_to: "${repo}/artifacts/final/maps/apo-v2-fix-test"
+      frozen_at: "${repo}/artifacts/eval_v3/apo2/kaggle_fix_test"
+      note: "BatchNorm re-estimation + CPU re-inference from the apo-v2 checkpoints (kernel_sources umud-apo-v2)"
+    - slug: apo-v2-fix-ext
+      code_dir: "${repo}/kaggle/apo_v2_fix/ext"
+      produces: ["{static,dynamic,vl}__apo_v2fix_{band,upper,lower}.npz"]
+      download_to: "${repo}/artifacts/final/maps/apo-v2-fix-ext"
+      frozen_at: "${repo}/artifacts/eval_v3/apo2/kaggle_fix_ext"
+  files:                          # map files of the test set read by the measure stage (sha256 pinned)
+    - {path: "${repo}/artifacts/eval_v3/apo2/maskbank_fix/test__apo_v2fix_band.npz", sha256: "6fbc541b88da8c0d836f9341d89f74eb90efc54bdd73d1466c777630b24254ea"}
+    - {path: "${repo}/artifacts/eval_v3/apo2/maskbank_fix/test__apo_v2fix_upper.npz", sha256: "b3f66ea6b11edd1ae23d9faf463f5b064f581d552a8c2352b67452cfd85cb744"}
+    - {path: "${repo}/artifacts/eval_v3/apo2/maskbank_fix/test__apo_v2fix_lower.npz", sha256: "a8023e92b47a111d01360d54cb7d025b5860235b9fccae6b7db899213466f181"}
+    - {path: "${repo}/artifacts/maskbank/maskbank/test__ours_apo384_noflip.npz", sha256: "83a60cef17c44fe9a4086c9b3b732d020234e00b07174c5123374b6994c4088e"}
+    - {path: "${repo}/artifacts/maskbank/maskbank/test__dlt_apo_noflip.npz", sha256: "f4e442539006dc21cc31790daeb23885768da3479aecba2327d0455bed8f9a7a"}
+    - {path: "${repo}/artifacts/maskbank/maskbank/test__ours_fasc384_noflip.npz", sha256: "6ffefb5a45fa18ba51baf3a1e6d92437db5b4785fde8a2f7e7754c244f138f69"}
+    - {path: "${repo}/artifacts/kaggle/fasc_orient_v1/maskbank/test__fasc_orient_v1_seg.npz", sha256: "578daa0b99bc3c7fe88645c2dccbe06213ec89fe93b994fd9be83ca33ea2a5f9"}
+    - {path: "${repo}/artifacts/kaggle/fasc_orient_v1/maskbank/test__fasc_orient_v1_cos2.npz", sha256: "d369954914b9bfc872d540cc7e4a6b42515ce5e07d438e81b32cac6c88438db3"}
+    - {path: "${repo}/artifacts/kaggle/fasc_orient_v1/maskbank/test__fasc_orient_v1_sin2.npz", sha256: "3d0c907e1475786a0be3b4bfe5bb2472c1a75c9c9790165ca972c3f9fb33e798"}
+
+# ------------------------------------------------------------------------------- 2. per-image measurement
+measure:
+  apo_source: v2                  # build_candidates_v3.APO_SRC key: apo_v2fix band@0.5 + edge channels, fallbacks
+  fragments: {model: ours_fasc384_noflip, thr: 0.95}
+  field_model: fasc_orient_v1
+  datasets: [test, static, vl, dynamic]
+  geometry:
+    name: v2e                     # recommended v2 config, end-linear edge extrapolation, no streamlines
+    resolved: {"apo_thr": 0.5, "apo_low": null, "apo_edge_level": null, "apo_subpixel": true, "apo_close_w": 0, "apo_min_area": 30, "apo_min_span": 0.25, "apo_span_ref": "viewport", "apo_merge": false, "apo_merge_dy": 0.025, "apo_merge_gap": 0.35, "apo_thick_clip": 3.0, "pair_mode": "superficial", "pair_min_sep": 0.05, "pair_max_angle": 25.0, "pair_deep_min_span": 0.35, "pair_min_cov": 0.15, "pair_margin": 5.0, "pair_max_cross": 0.5, "pair_oblique_only": true, "edge_fit": "poly2", "edge_extrap": "end_linear", "edge_end_frac": 0.3, "savgol_frac": 0.15, "edge_source": "centroid", "edge_search": 0.0, "edge_min_mass": 0.3, "mt_xpos": [0.25, 0.5, 0.75], "mt_xref": "shared", "mt_fit": "poly1", "mt_source": "fit", "fasc_thr": 0.95, "frag_min_area": 5, "frag_min_len": 10.0, "frag_max_minor_ratio": 1.0, "frag_inside_margin": 5.0, "frag_sign_consistency": false, "pa_min": 3.0, "pa_max": 45.0, "pa_method": "fusion", "pa_fallback": ["global", "structure"], "pa_reference": "deep", "central_frac": 0.6, "central_n": 3, "field_strip": [0.03, 0.35], "fl_method": "ensemble", "fl_primary": "straight", "fl_constructed_x": [0.4, 0.5, 0.6], "pa_fusion": ["global", "structure"], "fl_ensemble": ["straight", "central3", "constructed"], "fl_ensemble_agg": "mean", "fl_k": 1.065, "fl_gate_tol": 0.25, "fl_gate_mode": "blend", "fl_blend_w": 0.5, "sl_field": "auto", "sl_seeds": 7, "sl_seed_range": [0.3, 0.7], "sl_step": 2.0, "frag_field_sigma": 0.35, "st_kind": "radon", "st_line_mm": 10.0, "st_line_frac": 0.35, "st_hp_mm": 1.0, "st_use_frag_sign": true, "st_mask_outside": true, "st_symmetric": true, "st_sigma_d": 1.5, "st_sigma_t": 6.0, "st_ref_ppc": 100.0, "st_margin": 0.2, "st_region": "compartment", "st_agg": "mode", "st_xtrim": 0.1, "st_reject_edge": true, "flag_pa_range": [6.0, 40.0], "compute_structure": true, "compute_streamline": false, "flag_extrap": 0.93, "clip": false, "clip_pa": [5.0, 45.0], "clip_fl": [30.0, 200.0], "clip_mt": [5.0, 60.0]}
+  field: {"seg_pow": 1.0, "strip": [0.04, 0.3], "strip_ins": [0.02, 0.12], "comp_margin": 0.12, "xtrim": 0.1, "sub": 2, "robust_c": 8.0, "min_px": 30, "smooth_frac": 0.08, "min_support": 0.15, "n_seeds": 7, "seed_range": [0.3, 0.7], "sl_step": 2.0, "ins_frac": 0.15, "constructed_x": [0.4, 0.5, 0.6]}
+  smoke_extra_ids: [IMG_00066.tif, IMG_00200.tif]   # re-measured in addition to the first image of every group
+
+# ------------------------------------------------------------------------------- 3. geometry space (post rule 1)
+geometry_space:
+  method: posthoc                 # transform of the final image-space PA / FL (umud.native_geometry.posthoc_transform)
+  components: [pa, fl]            # MT is vertical and unchanged
+  delta_columns: [pa_fusion, d_pa_horizontal]   # delta = deep-aponeurosis tilt; PA' = atan(c tan phi) + atan(c tan delta)
+  scanners:
+    siemens_juniper:        {space: image, factor: 1.125, factor_source: detect_confirm, detector: siemens_ui_triangles,
+                             tolerance: 0.01,
+                             evidence: "native 1152x864 -> 1200x800 = (1200/1152)/(800/864) = 1.125 (all 474 training
+                               frames of this layout have 1152x864 label masks); the 45-degree focus-marker and
+                               cine-bar triangles measure 1.122-1.125 (median 1.123)"}
+    telemed_artus_1200x800: {space: image, factor: 0.9067, factor_source: declared, detector: telemed_ticks,
+                             evidence: "bottom ticks / left ruler 0.908 (native 1340x810); labels are in image space (J3)"}
+    telemed_artus_1088x644: {space: image, factor: 1.0, factor_source: declared, detector: telemed_ticks,
+                             evidence: "ticks / ruler 0.999: square pixels"}
+    philips_lumify:         {space: image, factor: 0.844, factor_source: detect_confirm, detector: lumify_p_disc,
+                             tolerance: 0.01,
+                             evidence: "16:9 screen -> 3:2 frame = 0.84375 (0.844 as declared in the scored probe); the
+                               round 'P' marker measures 0.834-0.845 (median 0.840)"}
+    legacy_853:             {space: image, factor: 1.0, factor_source: declared, detector: none}
+    legacy_512:             {space: image, factor: 1.0, factor_source: declared, detector: none}
+
+# ------------------------------------------------------------------------------- 4. PA head (+ post rule 3)
+pa_head:
+  name: fusF
+  definition: "equal-weight mean of the C1 fragment-fusion PA and the learned-field deep-strip PA vs the global deep line"
+  columns:
+    deep: [pa_fusion, pa_fd_strip_g]
+    horizontal: [pa_fusion_h, pa_fd_strip_h]   # dynamic benchmark only (its labels are measured vs horizontal)
+  weights: [1.0, 1.0]
+  mt_fail_below_mm: 5.0           # failure rule: MT < 5 mm -> PA, FL, MT missing (filled later)
+  coupling_pull: {weight: 0.0, groups: [telemed], k: 1.067}
+  telemed_head:                   # post rule 4 (Final A / B = KG0); off in C18 and K25b
+    enabled: false
+    head: G0
+    definition: "G0 = pa_fd_strip where the insertion strip is steeper than fusF (s = pa_fd_ins - fusF > 0, a sign
+      test), else fusF; then the PA recipe (confidence rule toward the scanner-group median, clip median, + the
+      4-decimal rater offset) and the coupling term of coupling_pull on the MT / FL of rules 1-2. FL is unchanged."
+    groups: [telemed]
+    gate_column: pa_fd_ins        # field angle in the insertion strip (2-12 % MT above the deep edge) vs the local tangent
+    strip_column: pa_fd_strip     # field angle in the deep strip (4-30 % MT, FieldConfig default) vs the LOCAL tangent
+    coupling: true                # false: the recipe of G0 without the coupling term (the G0n contrast file)
+    check_tol: 2.0e-4             # the written-out recipe on fusF must reproduce the pipeline's Telemed PA (rules 1-3)
+
+# ------------------------------------------------------------------------------- 5. FL rules
+fl_rules:
+  head:
+    name: ens_pp
+    columns: [fl_straight, fl_central3]
+    weights: [1.0, 1.0]
+    constructed: {weight: 1.0, at: post_shrink_pa, grid: {start: 3.0, stop: 45.0, step: 0.5, prefix: cg_}}
+  shrink_lambda:                  # 0 = raw (EB unit median: clip median for Telemed), 1 = EB-shrunk
+    default: 1.0
+    telemed_artus_1200x800: 0.0
+    telemed_artus_1088x644: 0.0
+  eb_gate_fl_fov: {enabled: false, groups: [non_telemed], max_ratio: 2.25}
+
+# ------------------------------------------------------------------------------- 6. MT edge (+ post rule 2)
+mt_edge:
+  definition: D0                  # inner edges of the superficial pair from the apo_v2fix edge channels (centroid),
+                                  # linear fits, 3 vertical lines at 25/50/75 % of the shared x-range
+  source_column: mt_mm
+  constant_mm: {default: 0.0}
+
+# ------------------------------------------------------------------------------- 7. shrinkage
+shrink:
+  clip_median: true               # median over the frames of each detected clip (after shrinkage)
+  cells:                          # scanner x muscle centres
+    enabled: true
+    muscles: [VL, GM, RF]
+    min_n: 8
+    min_conf: 0.9
+    use_inferred: false           # GNB-inferred labels are circular as centres
+    drop_ambiguous: true
+    fl_centres: true
+    fl_fov_gate: 2.5              # FL cell centre only if the cell's median raw FL/FOV <= 2.5 (benchmark support)
+    gate_applies_to: fl
+  pa:
+    rule: confidence              # w x + (1 - w) median(cell or scanner group), w = clip(confidence, 0, 1)
+    weight_power: 1.0
+    lambda: {default: 1.0}
+    pa_specific_confidence:
+      groups: []
+      fl_only_flag_penalties: {high_extrapolation: 0.3, fl_spread: 0.3, fl_triangle_disagree: 0.3}
+  fl:
+    rule: eb
+    method: ml
+    likelihood: laplace
+    prior_mu: median
+    cell_centre: centre_only      # pooled scanner (tau, c), cell median as centre
+  mt: none
+  error_model:
+    train: benchmark_lodo4        # static mean7 + VL young/old + dynamic, with the post-group FL
+    drop_static_in_training: true # the 25 in-training static images are not used
+    features: default
+    ridge: 1.0
+    balance: sqrt
+  constants:
+    test: {pop_sd: {pa: 3.2, fl: 10.5, mt: 3.2, logfl: 0.15}, tau_floor: {pa: 0.75, fl: 3.0, mt: 0.75, logfl: 0.04},
+           k0: 1.067, s_logk: 0.11}
+    bench: lodo_label_constants   # benchmarks: POP_SD / K0 / S_LOGK re-derived without the held-out dataset
+  pinned_code_defaults:           # function defaults of src/umud/shrinkage.py used by this recipe (checked at run)
+    fit_group_prior: {prior_sd_logtau: 0.2, prior_sd_logc: 2.0, marginal: t, nu: 5.0, iters: 50}
+    fit_error_model: {demean: true, min_rows: 10}
+    error_model_features: [negconf, log_nfrag, pa_iqr, extrap, extrap_c3, fl_iqr, fl_ens_spread, tri_rel, pa_dis,
+                           shared, apo_conv, log_fl_fov, log_cot_pa, flag_apo_fallback, flag_pair_fallback,
+                           flag_few_fragments, flag_short_apo_overlap, flag_pa_implausible]
+    error_model_exclude: {pa: [log_cot_pa], mt: [log_cot_pa]}
+    error_model_n_eff: {dynamic: 20}
+
+# ------------------------------------------------------------------------------- 8. rater style
+rater_style:
+  mode: reestimate                # re-run the pre-registered rule on this pipeline's benchmark predictions
+  reestimate_tol: 1.0e-12         # ... and require these declared values (the scored ones)
+  pa_add: 0.3285798847465733      # deg, all rows
+  mt_add: 0.03876938123115803     # mm, all rows
+  fl_mult: 1.0                    # the rule's FL CI includes 0 -> not applied
+  fl_mult_nonTel: 1.0
+  pa_add_by_group: {}
+  estimate:
+    rule: scripts/rater_calibration.py cmd_offsets (pre-registered 2026-10-21)
+    label_model: "test label = (R7 + partner)/2, R7 = Paul Ritsche (hypothesis), partner averaged over R1..R6"
+    source: "OSF static benchmark xlsx, sheet Manual_architecture; R7_MT of im_19 (80.13, typo) -> NaN"
+    strength: rule                # rule = half of the clean10 estimate unless strongly supported
+    tag: C18rule
+    B: 4000
+    seed: 0
+
+# ------------------------------------------------------------------------------- 9. LB-chosen values
+lb_constants:                     # every value chosen with the public LB (target checked at run time)
+  - name: telemed_fl_shrink
+    target: [fl_rules.shrink_lambda.telemed_artus_1200x800, fl_rules.shrink_lambda.telemed_artus_1088x644]
+    grid: [0.0, 1.0]
+    value: 0.0
+    status: adopted
+    kind: method_choice
+    ledger: "C12 0.37670 -> C18 0.33526 (-0.0414); C13 (shorter Telemed FL) and C19 (coupling FL) lost"
+    rationale: "EB FL shrinkage toward the group median hurts on Telemed; the single-subject dynamic (Telemed
+      EchoBlaster) benchmark predicted it before the probe (EB FL 0.171 -> 0.183)."
+  - name: rater_offset_pa
+    target: rater_style.pa_add
+    grid: [0.0, 0.3285798847465733, 0.6571597694931466]
+    value: 0.3285798847465733
+    status: adopted
+    kind: benchmark_constant_LB_confirmed
+    ledger: "C17 (no offset) 0.38091 vs C12 0.37670"
+    rationale: "value from the pre-registered benchmark rule on the OSF xlsx (re-estimated at every build); the LB
+      only confirmed {half} against {none}"
+  - name: rater_offset_mt
+    target: rater_style.mt_add
+    grid: [0.0, 0.03876938123115803, 0.07753876246231606]
+    value: 0.03876938123115803
+    status: adopted
+    kind: benchmark_constant_LB_confirmed
+    ledger: "moved with rater_offset_pa (C17 vs C12)"
+    rationale: "benchmark rule value"
+
+# ------------------------------------------------------------------------------- output
+output:
+  file_name: ${name}.csv
+  bounds: {pa_deg: [5.0, 45.0], fl_mm: [30.0, 200.0], mt_mm: [10.0, 50.0]}
+  bound_margin: 0.001             # post-rule values are kept 1e-3 inside the bounds
+  decimals: 4
+  per_image_table_roundtrip: true # the unshrunk FL is taken from the per-image table as written + read (pandas)
+  full_precision_unshrunk_fl: true   # the stage file keeps the unshrunk (fl lambda 0) FL cells at full precision
+  validate: true                  # scripts/validate_submission.py
+  strict_pins: true               # refuse to build when a pinned input or code file changed
+  allow_cell_overlap: false
